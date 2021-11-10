@@ -1,8 +1,17 @@
 //const axios = require('axios');
 
 window.onload = () => {
-  plotaCandle("wege3.SA");
-  console.log("olá");
+
+  var app = new Vue({
+    el: '#app',
+    data: {
+      message: 'Hello Vue!',
+      stocks: ["AAPL","PETR3.SA"]
+    }
+  })
+
+  //plotaCandle("wege3.SA");
+  //console.log("olá");
 }
 
 const plotaCandle = (stock) => {
