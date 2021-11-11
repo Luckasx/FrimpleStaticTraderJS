@@ -1,4 +1,4 @@
-//const axios = require('axios');
+Vue.component('exampleComponent', require('./components/ExampleComponent.vue')); 
 
 window.onload = () => {
 
@@ -6,7 +6,15 @@ window.onload = () => {
     el: '#app',
     data: {
       message: 'Hello Vue!',
-      stocks: ["AAPL","PETR3.SA"]
+      stocks: ["AAPL","PETR3.SA"],
+      data:[{
+        x: [1,2,3,4],
+        y: [10,15,13,17],
+        type:"scatter"
+      }],
+      layout:{
+        title: "My graph"
+      }
     }
   })
 
