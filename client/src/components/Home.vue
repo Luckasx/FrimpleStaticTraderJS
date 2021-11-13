@@ -10,7 +10,7 @@
 
     <div v-for="s of datastocks" :key="s.ticker">
       <h3>{{ s.ticker }}</h3>
-      <Plotly :data="s.data" :layout="s.layout" ></Plotly>
+      <Plotly :data="s.data" :layout="s.layout"></Plotly>
     </div>
   </b-container>
 </template>
@@ -43,11 +43,60 @@ export default {
           b: 40,
           l: 60,
         },
+        height:600,
         showlegend: false,
         xaxis: {
+          automargin:true,
           autorange: true,
           domain: [0, 1],
-          range: ["2017-01-03 12:00", "2017-02-15 12:00"],
+          rangeselector: {
+            x: 0,
+            y: 1.2,
+            xanchor: "left",
+            // font: { size: 8 },
+            buttons: [
+              {
+                step: "week",
+                stepmode: "backward",
+                count: 1,
+                label: "1W",
+              },
+              {
+                step: "month",
+                stepmode: "backward",
+                count: 1,
+                label: "1M",
+              },
+              {
+                step: "month",
+                stepmode: "backward",
+                count: 3,
+                label: "3M",
+              },
+              {
+                step: "month",
+                stepmode: "backward",
+                count: 6,
+                label: "6M",
+              },
+              {
+                  step: 'year',
+                  stepmode: 'todate',
+                  count: 1,
+                  label: 'YTD'
+              },
+              {
+                step: "month",
+                stepmode: "backward",
+                count: 12,
+                label: "1Y",
+              },
+              {
+                step: "all",
+                label: "All",
+              },
+            ],
+          },
           rangeslider: { visible: false },
           title: "Date",
           type: "date",
@@ -55,18 +104,17 @@ export default {
         yaxis: {
           autorange: true,
           domain: [0, 1],
-          range: [114.609999778, 137.410004222],
           type: "linear",
         },
       },
-      tickers_list: ["AAPL", "PETR3.SA", "ABEV3.SA", "TIMS3.SA"],
+      tickers_list: ["AAPL", "PETR3.SA", "ABEV3.SA", "TIMS3.SA", "NFLX", "WEGE3.SA", "TUPY3.SA", "FLRY3.SA"],
     };
   },
   methods: {
     EMACalc(mArray, mRange) {
       var k = 2 / (mRange + 1);
       // first item is just the same as the first item in the input
-      console.log("mArray",mArray);
+      console.log("mArray", mArray);
 
       let datas_array = [mArray[0].x[0]];
       let emaArray = [mArray[0].close[0]];
@@ -80,7 +128,7 @@ export default {
         y: emaArray,
         mode: "lines",
         name: "EMA_" + mRange,
-        line: { dash:'dashdot', color: "black" },
+        line: { dash: "dashdot", color: "black" },
         type: "scatter",
       };
     },
@@ -102,17 +150,15 @@ export default {
 
         if (el != "") {
           let data = await this.getStockData(el);
-          
-          let ema9 = await this.EMACalc(data,9);
-          
-          let ema25 = await this.EMACalc(data,25);
-          ema25.line.color = "purple"
 
-          this.datas.push([ data[0], ema9, ema25]);
+          let ema9 = await this.EMACalc(data, 9);
+
+          let ema25 = await this.EMACalc(data, 25);
+          ema25.line.color = "purple";
+
+          this.datas.push([data[0], ema9, ema25]);
 
           this.layouts.push(this.layout_template);
-
-          console.log(this.datastocks);
         }
       }
     },
