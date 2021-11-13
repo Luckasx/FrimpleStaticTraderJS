@@ -1,5 +1,8 @@
 <template>
   <div id="app">
+       <b-navbar toggleable="lg" type="dark" variant="dark">
+           <b-navbar-brand href="#">Frimplestatic JS (free, simple, static and js)</b-navbar-brand>
+      </b-navbar>
         <homexmen msg="Welcome to Your Vue.js App"/>
   </div>
 </template>
@@ -23,6 +26,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  /* margin-top: 60px; */
 }
 </style>

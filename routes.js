@@ -17,7 +17,7 @@ const yahooFinance = require('yahoo-finance2').default; // NOTE the .default
 app.get('/api/:stock', async (req, res) => {
     try {
         const query = req.params.stock;
-        const queryOptions = { period1: '2021-02-01' };
+        const queryOptions = { period1: '2017-02-01' };
         const result = await yahooFinance.historical(query, queryOptions);
         res.send(result)
     }

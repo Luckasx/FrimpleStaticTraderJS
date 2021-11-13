@@ -4,8 +4,8 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "server": "nodemon --ignore './client/' app.js",
-    "client": "cd client && npm run serve",    
+    "server": "nodemon app.js",
+    "client": "cd client && npm run serve",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,10 +20,13 @@
   "homepage": "https://github.com/Luckasx/FrimpleStaticTraderJS#readme",
   "dependencies": {
     "axios": "^0.24.0",
-    "bootstrap-vue": "^2.21.2",
     "express": "^4.17.1",
     "nodemon": "^2.0.15",
     "vue-plotly": "^1.1.0",
     "yahoo-finance2": "^1.14.6"
+  },
+  "nodemonConfig": {
+    "ignore": ["client/*", "docs/*"],
+    "delay": 2500
   }
 }
