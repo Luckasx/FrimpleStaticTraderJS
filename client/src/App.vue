@@ -10,8 +10,10 @@
 <script>
 import Vue from 'vue';
 import Home from './components/Home.vue'
+import TickerCard from './components/TickerCard.vue'
 
 Vue.component("homexmen", Home);
+Vue.component("ticker-card", TickerCard);
 
 export default {
   name: 'App',

@@ -9,21 +9,18 @@
     </b-input-group>
 
     <div v-for="s of datastocks" :key="s.ticker">
-      <h3>{{ s.ticker }}</h3>
-      <Plotly :data="s.data" :layout="s.layout"></Plotly>
+      <ticker-card :datas="s" :oticker="s.ticker" :olayout="s.layout" :key="s.ticker"></ticker-card>
     </div>
   </b-container>
 </template>
 
 <script>
-import { Plotly } from "vue-plotly";
 
-const axios = require("axios");
 
 export default {
   name: "Home",
   components: {
-    Plotly,
+    
   },
   props: {
     msg: String,
@@ -35,103 +32,20 @@ export default {
       istocks: "",
       stocks: "",
       astocks: [],
-      layout_template: {
-        dragmode: "zoom",
-        margin: {
-          r: 10,
-          t: 25,
-          b: 40,
-          l: 60,
-        },
-        height:600,
-        showlegend: false,
-        xaxis: {
-          automargin:true,
-          autorange: true,
-          domain: [0, 1],
-          rangeselector: {
-            x: 0,
-            y: 1.2,
-            xanchor: "left",
-            // font: { size: 8 },
-            buttons: [
-              {
-                step: "week",
-                stepmode: "backward",
-                count: 1,
-                label: "1W",
-              },
-              {
-                step: "month",
-                stepmode: "backward",
-                count: 1,
-                label: "1M",
-              },
-              {
-                step: "month",
-                stepmode: "backward",
-                count: 3,
-                label: "3M",
-              },
-              {
-                step: "month",
-                stepmode: "backward",
-                count: 6,
-                label: "6M",
-              },
-              {
-                  step: 'year',
-                  stepmode: 'todate',
-                  count: 1,
-                  label: 'YTD'
-              },
-              {
-                step: "month",
-                stepmode: "backward",
-                count: 12,
-                label: "1Y",
-              },
-              {
-                step: "all",
-                label: "All",
-              },
-            ],
-          },
-          rangeslider: { visible: false },
-          title: "Date",
-          type: "date",
-        },
-        yaxis: {
-          autorange: true,
-          domain: [0, 1],
-          type: "linear",
-        },
-      },
-      tickers_list: ["AAPL", "PETR3.SA", "ABEV3.SA", "TIMS3.SA", "NFLX", "WEGE3.SA", "TUPY3.SA", "FLRY3.SA"],
+      tickers_list: [
+        "AAPL",
+        "PETR3.SA",
+        "ABEV3.SA",
+        "TIMS3.SA",
+        "NFLX",
+        "WEGE3.SA",
+        "TUPY3.SA",
+        "FLRY3.SA",
+      ],
     };
   },
   methods: {
-    EMACalc(mArray, mRange) {
-      var k = 2 / (mRange + 1);
-      // first item is just the same as the first item in the input
-      console.log("mArray", mArray);
-
-      let datas_array = [mArray[0].x[0]];
-      let emaArray = [mArray[0].close[0]];
-      // for the rest of the items, they are computed with the previous one
-      for (var i = 1; i < mArray[0].close.length; i++) {
-        emaArray.push(mArray[0].close[i] * k + emaArray[i - 1] * (1 - k));
-        datas_array.push(mArray[0].x[i]);
-      }
-      return {
-        x: datas_array,
-        y: emaArray,
-        mode: "lines",
-        name: "EMA_" + mRange,
-        line: { dash: "dashdot", color: "black" },
-        type: "scatter",
-      };
-    },
+   
     async loadCharts() {
       this.datas = [];
 
@@ -142,51 +56,9 @@ export default {
       this.istocks = "";
 
       this.astocks = this.stocks.replace("\n", "").split(";");
-
-      // console.log(this.astocks);
-
-      for (let x = 0; x < this.astocks.length; x++) {
-        let el = this.astocks[x];
-
-        if (el != "") {
-          let data = await this.getStockData(el);
-
-          let ema9 = await this.EMACalc(data, 9);
-
-          let ema25 = await this.EMACalc(data, 25);
-          ema25.line.color = "purple";
-
-          this.datas.push([data[0], ema9, ema25]);
-
-          this.layouts.push(this.layout_template);
-        }
-      }
+      
     },
-    getStockData: async (ticker) => {
-      try {
-        let response = await axios.get(`/api/${ticker}`);
-
-        let res = [
-          {
-            x: response.data.map((el) => el.date),
-            close: response.data.map((el) => el.close),
-            high: response.data.map((el) => el.high),
-            low: response.data.map((el) => el.low),
-            open: response.data.map((el) => el.open),
-            type: "candlestick",
-            xaxis: "x",
-            yaxis: "y",
-          },
-        ];
-
-        //console.log("res", res)
-
-        return res;
-      } catch (err) {
-        console.error(err);
-        return [];
-      }
-    },
+    
   },
   mounted() {
     const randomElement =
