@@ -17,6 +17,7 @@ Vue.component("ticker-card", TickerCard);
 
 export default {
   name: 'App',
+  title:"Titulo"
  
 }
 </script>

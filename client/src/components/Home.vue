@@ -6,16 +6,18 @@
       <b-input-group-append>
         <b-button variant="outline-success" @click="loadCharts">Load</b-button>
       </b-input-group-append>
+       
     </b-input-group>
 
     <div v-for="s of datastocks" :key="s.ticker">
-      <ticker-card :datas="s" :oticker="s.ticker" :olayout="s.layout" :key="s.ticker"></ticker-card>
+      <ticker-card :datas="s" :oticker="s.ticker" :olayout="s.layout" :key="s.ticker" :emas="selected_emas"></ticker-card>
     </div>
   </b-container>
 </template>
 
 <script>
 
+import TickersList from '../assets/tickers.js';
 
 export default {
   name: "Home",
@@ -32,16 +34,8 @@ export default {
       istocks: "",
       stocks: "",
       astocks: [],
-      tickers_list: [
-        "AAPL",
-        "PETR3.SA",
-        "ABEV3.SA",
-        "TIMS3.SA",
-        "NFLX",
-        "WEGE3.SA",
-        "TUPY3.SA",
-        "FLRY3.SA",
-      ],
+      tickers_list: TickersList,
+     
     };
   },
   methods: {

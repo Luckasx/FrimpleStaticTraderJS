@@ -16,3 +16,5 @@ Vue.use(IconsPlugin)
 new Vue({
   render: h => h(App),
 }).$mount('#app')
+
+document.title ="Frimplestatic JS"

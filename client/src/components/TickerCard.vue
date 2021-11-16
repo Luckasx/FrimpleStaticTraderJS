@@ -1,32 +1,59 @@
 <template>
-  <div>
-    <h3>{{ oticker }}</h3>
-    <div>
-      <b-input-group>
-        <b-input-group-prepend>
-          <b-button variant="outline-info">1W</b-button>
-          <b-button variant="outline-secondary" @click="getMonths(1)"
-            >1M</b-button
-          >
-          <b-button variant="outline-primary" @click="getMonths(3)"
-            >3M</b-button
-          >
-          <b-button variant="outline-primary" @click="getMonths(6)"
-            >6M</b-button
-          >
-          <b-button variant="outline-primary">YTD</b-button>
-          <b-button variant="outline-primary" @click="getMonths(12)"
-            >1Y</b-button
-          >
-          <b-button variant="outline-primary" @click="getMonths(60)"
-            >5y</b-button
-          >
-          <b-button variant="outline-primary" @click="getAll()">All</b-button>
-        </b-input-group-prepend>
-      </b-input-group>
+  <b-container fluid>
+    <div class="mt-3">
+     <b-card
+      :header="oticker"
+      header-tag="header"
+      bg-variant="dark"
+      text-variant="white"
+    >
+      <b-card-text>
+    <b-row v-if="temDados">
+      <b-col cols="3">
+        <b-input-group class="range_buttons">
+          <b-input-group-prepend>
+            <b-button variant="dark" @click="getDays(7)">1W</b-button>
+            <b-button variant="dark" @click="getMonths(1)">1M</b-button>
+            <b-button variant="dark" @click="getMonths(3)" >3M</b-button>
+            <b-button variant="dark" @click="getMonths(6)">6M</b-button>
+            <b-button variant="dark" @click="getCurrentYear()">YTD</b-button>
+            <b-button variant="dark" @click="getMonths(12)"              >1Y</b-button>
+            <b-button variant="dark" @click="getMonths(60)">5y</b-button>
+            <b-button variant="dark" @click="getAll()">All</b-button>
+          </b-input-group-prepend>
+        </b-input-group>
+      </b-col>
+      <b-col class="mt-3" cols="9">
+        <b-form inline>
+          <b-form-group
+            id="input-group-1"
+            label="Exponential Moving Average:"
+            label-for="input-1"
+            class="mr-3"
+          ></b-form-group>
+          <b-form-checkbox-group
+            id="checkbox-group-1"
+            v-model="selected_emas"
+            :options="emas"
+            name="flavour-1"
+            @change="updateEmas()"
+          ></b-form-checkbox-group>
+        </b-form>
+      </b-col>
+    </b-row>
+    <b-row class="mt-3" v-if="temDados">
+      <b-col cols="12">
+      <Plotly :data="sdata" :layout="layout_template"></Plotly>
+      </b-col>
+    </b-row>
+    <b-row v-if="!temDados">
+      <b-alert show variant="warning">No quotes found for {{ oticker }} </b-alert>
+    </b-row>
+</b-card-text>
+      
+    </b-card>
     </div>
-    <Plotly :data="sdata" :layout="layout_template"></Plotly>
-  </div>
+  </b-container>
 </template>
 
 <script>
@@ -34,16 +61,33 @@ import { Plotly } from "vue-plotly";
 
 const axios = require("axios");
 
+const template_row = {
+  close: [],
+  high: [],
+  low: [],
+  open: [],
+  type: "candlestick",
+  x: [],
+  xaxis: "x",
+  yaxis: "y",
+};
+
 export default {
-  props: {  oticker: String},
+  props: { oticker: String },
   components: {
     Plotly,
   },
   data: function () {
     return {
       original: [],
-      sdata:  [],
-      emas: [{d:9, color: "red" }, {d:25, color:"purple"}],
+      sdata: [],
+      emas: [
+        { text: 7, value: 7, color: "orange" },
+        { text: 9, value: 9, color: "red" },
+        { text: 25, value: 25, color: "purple" },
+        { text: 50, value: 50, color: "brown" },
+      ],
+      selected_emas: [9, 25],
       layout_template: {
         dragmode: "zoom",
         margin: {
@@ -54,7 +98,7 @@ export default {
         },
         height: 600,
         showlegend: false,
-        
+
         xaxis: {
           automargin: true,
           autorange: true,
@@ -77,14 +121,25 @@ export default {
     };
   },
   async mounted() {
-    
-          this.original = await this.getStockData(this.oticker);
+    this.original = await this.getStockData(this.oticker);
 
-          this.sdata = [this.original[0]];
+    this.sdata = [this.original[0]];
 
-          this.getEmas()
+    this.getEmas();
 
-          this.layouts.push(this.layout_template);
+    this.layouts.push(this.layout_template);
+  },
+  computed: {
+    temDados: function() {
+      try{
+        
+        return this.sdata[0].x.length > 0;
+      }
+      catch(err){
+        console.log("ERRRRRRRRRRRO", err);
+        return false;
+      }
+    },
   },
   methods: {
     getStockData: async (ticker) => {
@@ -112,10 +167,9 @@ export default {
         return [];
       }
     },
-     EMACalc(mArray, mRange) {
+    EMACalc(mArray, mRange) {
       var k = 2 / (mRange + 1);
       // first item is just the same as the first item in the input
-      console.log("mArray", mArray);
 
       let datas_array = [mArray[0].x[0]];
       let emaArray = [mArray[0].close[0]];
@@ -133,65 +187,100 @@ export default {
         type: "scatter",
       };
     },
-    getEmas(){
+    getEmas() {
+      for (let x = 0; x < this.selected_emas.length; x++) {
+        let v = this.selected_emas[x];
 
-      for(let x = 0; x < this.emas.length; x++){
+        let dataema = this.EMACalc(this.sdata, v);
 
-            let el = this.emas[x];
+        dataema.line.color = this.emas.find((el) => el.value == v).color;
 
-            let dataema = this.EMACalc(this.sdata, el.d);
-
-            dataema.line.color = el.color;
-
-            this.sdata.push(dataema);
-            
-          }
-
+        this.sdata.push(dataema);
+      }
     },
-    getMonths(months) {
+    loadStockData(goal) {
       try {
-        let goal = new Date();
+        this.sdata = [JSON.parse(JSON.stringify(template_row))];
 
-        goal = goal.setMonth(goal.getMonth() - months);
+        //this.sdata[0] = template_row;
 
-        this.sdata = [];
-        this.sdata[0] = {
-          close: [],
-          high: [],
-          low: [],
-          open: [],
-          type: "candlestick",
-          x: [],
-          xaxis: "x",
-          yaxis: "y",
-        };
         let el = this.original[0];
 
         for (let x = 0; x < this.original[0].x.length; x++) {
           let d = el.x[x];
 
           if (Date.parse(d) > goal) {
-            this.sdata[0].close.push(el.close[x]);
-            this.sdata[0].high.push(el.high[x]);
-            this.sdata[0].low.push(el.low[x]);
-            this.sdata[0].open.push(el.open[x]);
-            this.sdata[0].x.push(el.x[x]);
+            this.addStockRow(this.sdata[0], el, x);
           }
         }
 
-        this.sdata = [this.sdata[0]];
+        //this.sdata = [this.sdata[0]];
 
         this.getEmas();
-
-        console.log("depois", this.sdata);
       } catch (err) {
         console.error("err", err);
       }
     },
+    getDays(days) {
+      let goal = new Date();
+
+      goal.setDate(goal.getDate() - days);
+
+      console.log(goal, days);
+
+      this.loadStockData(goal);
+    },
+    getCurrentYear() {
+      try {
+        this.sdata = [JSON.parse(JSON.stringify(template_row))];
+
+        let el = this.original[0];
+
+        let currentYear = new Date().getFullYear();
+
+        for (let x = 0; x < this.original[0].x.length; x++) {
+          let d = el.x[x];
+
+          if (new Date(d).getFullYear() >= currentYear) {
+            this.addStockRow(this.sdata[0], el, x);
+          }
+        }
+
+        this.getEmas();
+      } catch (err) {
+        console.error("err", err);
+      }
+    },
+    getMonths(months) {
+      let goal = new Date();
+
+      goal = goal.setMonth(goal.getMonth() - months);
+
+      this.loadStockData(goal);
+    },
     getAll() {
       this.sdata = [this.original[0]];
-      this.getEmas()
+      this.getEmas();
+    },
+    addStockRow(data, el, x) {
+      data.close.push(el.close[x]);
+      data.high.push(el.high[x]);
+      data.low.push(el.low[x]);
+      data.open.push(el.open[x]);
+      data.x.push(el.x[x]);
+    },
+    updateEmas() {
+      console.log("updating", this.selected_emas);
+
+      this.sdata = [this.sdata[0]];
+      this.getEmas();
     },
   },
 };
 </script>
+
+<style scoped>
+.range_buttons button {
+  font-size: 12px !important;
+}
+</style>
