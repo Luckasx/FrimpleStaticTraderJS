@@ -43,7 +43,8 @@
     </b-row>
     <b-row class="mt-3" v-if="temDados">
       <b-col cols="12">
-      <Plotly :data="sdata" :layout="layout_template"></Plotly>
+      <!-- <Plotly :data="sdata" :layout="layout_template"></Plotly> -->
+      <apexchart type="line" height="350" :options="chartOptions" :series="series"></apexchart>
       </b-col>
     </b-row>
     <b-row v-if="!temDados">
@@ -57,7 +58,9 @@
 </template>
 
 <script>
-import { Plotly } from "vue-plotly";
+// import { Plotly } from "vue-plotly";
+import VueApexCharts from 'vue-apexcharts'
+
 
 const axios = require("axios");
 
@@ -75,7 +78,7 @@ const template_row = {
 export default {
   props: { oticker: String },
   components: {
-    Plotly,
+     'apexchart':VueApexCharts,
   },
   data: function () {
     return {
@@ -103,6 +106,13 @@ export default {
           automargin: true,
           autorange: true,
           domain: [0, 1],
+          rangebreaks:[
+            {
+             bounds: [6, 1],
+              //values: ["sat", "mon"],
+              pattern:'day of week'
+            }
+          ],
           rangeselector: {
             x: 0,
             y: 1.2,
@@ -118,6 +128,46 @@ export default {
           type: "linear",
         },
       },
+       series: [{
+            name: 'Website Blog',
+            type: 'column',
+            data: [440, 505, 414, 671, 227, 413, 201, 352, 752, 320, 257, 160]
+          }, {
+            name: 'Social Media',
+            type: 'line',
+            data: [23, 42, 35, 27, 43, 22, 17, 31, 22, 22, 12, 16]
+          }],
+          chartOptions: {
+            chart: {
+              height: 350,
+              type: 'line',
+            },
+            stroke: {
+              width: [0, 4]
+            },
+            title: {
+              text: 'Traffic Sources'
+            },
+            dataLabels: {
+              enabled: true,
+              enabledOnSeries: [1]
+            },
+            labels: ['01 Jan 2001', '02 Jan 2001', '03 Jan 2001', '04 Jan 2001', '05 Jan 2001', '06 Jan 2001', '07 Jan 2001', '08 Jan 2001', '09 Jan 2001', '10 Jan 2001', '11 Jan 2001', '12 Jan 2001'],
+            xaxis: {
+              type: 'datetime'
+            },
+            yaxis: [{
+              title: {
+                text: 'Website Blog',
+              },
+            
+            }, {
+              opposite: true,
+              title: {
+                text: 'Social Media'
+              }
+            }]
+          },
     };
   },
   async mounted() {

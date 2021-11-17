@@ -26,7 +26,10 @@
     "yahoo-finance2": "^1.14.6"
   },
   "nodemonConfig": {
-    "ignore": ["client/*", "docs/*"],
+    "ignore": [
+      "client/*",
+      "docs/*"
+    ],
     "delay": 2500
   }
 }

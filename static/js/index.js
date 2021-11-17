@@ -1,4 +1,4 @@
-Vue.component('exampleComponent', require('./components/ExampleComponent.vue')); 
+//Vue.component('exampleComponent', require('./components/ExampleComponent.vue')); 
 
 window.onload = () => {
 
