@@ -41,13 +41,12 @@
           <b-row class="mt-3" v-if="temDados">
             <b-col cols="12">
               <!-- <Plotly :data="sdata" :layout="layout_template"></Plotly> -->
-              <trading-vue :data="this.$data"></trading-vue>
-              <!-- <apexchart
+              <apexchart
                 type="candlestick"
                 height="350"
                 :options="chartOptions"
                 :series="series"
-              ></apexchart> -->
+              ></apexchart>
             </b-col>
           </b-row>
           <b-row v-if="!temDados">
@@ -63,8 +62,8 @@
 
 <script>
 // import { Plotly } from "vue-plotly";
-//  import VueApexCharts from 'vue-apexcharts'
-import TradingVue from 'trading-vue-js'
+import VueApexCharts from 'vue-apexcharts'
+
 
 const axios = require("axios");
 
@@ -81,16 +80,11 @@ const template_row = {
 
 export default {
   props: { oticker: String },
-  components: { TradingVue },
+  components: {
+     'apexchart':VueApexCharts,
+  },
   data: function () {
     return {
-       ohlcv: [
-                [ 1551128400000, 33,  37.1, 14,  14,  196 ],
-                [ 1551132000000, 13.7, 30, 6.6,  30,  206 ],
-                [ 1551135600000, 29.9, 33, 21.3, 21.8, 74 ],
-                [ 1551139200000, 21.7, 25.9, 18, 24,  140 ],
-                [ 1551142800000, 24.1, 24.1, 24, 24.1, 29 ],
-            ],
       original: [],
       sdata: [],
       emas: [
@@ -193,14 +187,11 @@ export default {
   async mounted() {
     //this.original = await this.getStockData(this.oticker);    
 
-    //this.series = await this.getApexStockData(this.oticker);
+    this.series = await this.getApexStockData(this.oticker);
 
-    //console.log(this.series);
-
-    this.renderChart();
+    console.log(this.series);
     
   },
-
   computed: {
     temDados: function() {
       try{
@@ -214,7 +205,6 @@ export default {
     },
   },
   methods: {
-    
     getStockData: async (ticker) => {
       try {
         let response = await axios.get(`/api/${ticker}`);

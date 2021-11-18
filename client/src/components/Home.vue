@@ -58,6 +58,7 @@ export default {
     const randomElement =
       this.tickers_list[Math.floor(Math.random() * this.tickers_list.length)];
     this.istocks = randomElement;
+    this.istocks = "AAPL";
     this.loadCharts();
     this.istocks = "";
   },
