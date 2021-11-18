@@ -40,14 +40,26 @@
           </b-row>
           <b-row class="mt-3" v-if="temDados">
             <b-col cols="12">
-              <!-- <Plotly :data="sdata" :layout="layout_template"></Plotly> -->
-              <trading-vue :data="this.$data"></trading-vue>
-              <!-- <apexchart
-                type="candlestick"
-                height="350"
-                :options="chartOptions"
-                :series="series"
-              ></apexchart> -->
+              <trading-vue
+                :data="this.$data"
+                ref="tradingVue"
+                :width="width"
+                :height="height"
+                :chart-config="{ DEFAULT_LEN: 200 }"
+                :color-back="colors.back"
+                :color-grid="colors.grid"
+                :color-text="colors.text"
+                :color-cross="colors.cross"
+                :color-candle-dw="colors.candle_dw"
+                :color-wick-dw="colors.wick_dw"
+                :color-title="colors.tvTitle"
+                :title-txt="oticker"
+                class="bolder"
+              ></trading-vue>
+              <span class="night-mode">
+                <input type="checkbox" v-model="night" />
+                <label class="ml-1">Night Mode</label>
+              </span>
             </b-col>
           </b-row>
           <b-row v-if="!temDados">
@@ -62,35 +74,31 @@
 </template>
 
 <script>
-// import { Plotly } from "vue-plotly";
-//  import VueApexCharts from 'vue-apexcharts'
-import TradingVue from 'trading-vue-js'
+import TradingVue from "trading-vue-js";
+import { Overlay } from "trading-vue-js";
 
 const axios = require("axios");
 
-const template_row = {
-  close: [],
-  high: [],
-  low: [],
-  open: [],
-  type: "candlestick",
-  x: [],
-  xaxis: "x",
-  yaxis: "y",
-};
-
 export default {
   props: { oticker: String },
+  mixins: [Overlay],
   components: { TradingVue },
   data: function () {
     return {
-       ohlcv: [
-                [ 1551128400000, 33,  37.1, 14,  14,  196 ],
-                [ 1551132000000, 13.7, 30, 6.6,  30,  206 ],
-                [ 1551135600000, 29.9, 33, 21.3, 21.8, 74 ],
-                [ 1551139200000, 21.7, 25.9, 18, 24,  140 ],
-                [ 1551142800000, 24.1, 24.1, 24, 24.1, 29 ],
-            ],
+      selected_emas: [9, 25],
+      colorText: "#111111",
+      width: window.innerWidth * 0.95,
+      height: 550,
+      night: true,
+      chart: {
+        colorText: "red",
+        type: "Candles",
+        indexBased: true,
+      },
+      onchart:[
+
+      ],
+      ohlcv: [],
       original: [],
       sdata: [],
       emas: [
@@ -99,140 +107,62 @@ export default {
         { text: 25, value: 25, color: "purple" },
         { text: 50, value: 50, color: "brown" },
       ],
-      selected_emas: [9, 25],
-      layout_template: {
-        dragmode: "zoom",
-        margin: {
-          r: 10,
-          t: 25,
-          b: 40,
-          l: 60,
-        },
-        height: 600,
-        showlegend: false,
-        xaxis: {
-          automargin: true,
-          autorange: true,
-          domain: [0, 1],
-          rangebreaks:[
-            {
-             bounds: [6, 1],
-              //values: ["sat", "mon"],
-              pattern:'day of week'
-            }
-          ],
-          rangeselector: {
-            x: 0,
-            y: 1.2,
-            xanchor: "left",
-          },
-          rangeslider: { visible: false },
-          title: "Date",
-          type: "date",
-        },
-        yaxis: {
-          autorange: true,
-          domain: [0, 1],
-          type: "linear",
-        },
-      },
-      series: [{
-            data: [{
-                x: new Date(1538778600000),
-                y: [6629.81, 6650.5, 6623.04, 6633.33]
-              }
-            ]
-
-      }]          ,
-      chartOptions: {
-            
-            chart: {
-              animations: {
-                enabled: false,
-              },
-              type: 'candlestick',
-              height: 350,
-               zoom: {
-                enabled: true,
-                autoScaleYaxis: true, 
-
-              }
-            },
-           
-            title: {
-              text: 'CandleStick Chart',
-              align: 'left'
-            },
-            xaxis: {
-              type: 'datetime',
-              labels: {
-                    formatter: function(val) {
-                      return new Date(val).toDateString().substring(4)
-                }
-              },
-              tooltip: {
-                enabled: true,
-                style: {
-                  fontSize: '12px',
-                  color:'black'
-                }
-              }
-            },
-            yaxis: {
-              tooltip: {
-                enabled: false,
-                style: {
-                  fontSize: '12px',
-                  color:'black'
-                },
-              }
-            }
-          },
-    }
+    };
   },
   async mounted() {
-    //this.original = await this.getStockData(this.oticker);    
-
-    //this.series = await this.getApexStockData(this.oticker);
-
-    //console.log(this.series);
-
-    this.renderChart();
     
+    this.ohlcv = await this.getStockData(this.oticker);
+    this.getEmas();
+    
+
+    this.$nextTick(() => {
+      let begin = this.$refs.tradingVue.getRange()[0];
+      let now = new Date().getTime();
+      this.$refs.tradingVue.setRange(begin, now);
+    });
+    //this.renderChart();
   },
 
   computed: {
-    temDados: function() {
-      try{
-        
-        return this.series[0].data.length > 0;
-      }
-      catch(err){
-        console.log("ERRRRRRRRRRRO", err);
-        return false;
-      }
+    temDados: function () {
+      return true;
+    },
+    colors() {
+      return this.night
+        ? {
+            back: "#121827",
+            grid: "#3e3e3e",
+            text: "#35a776",
+            cross: "#dd64ef",
+            candle_dw: "#e54077",
+            wick_dw: "#e54077",
+          }
+        : {
+            back: "#fff",
+            grid: "#eee",
+            text: "#333",
+            candle_dw: "black",
+            wick_dw: "black",
+          };
     },
   },
   methods: {
-    
     getStockData: async (ticker) => {
       try {
         let response = await axios.get(`/api/${ticker}`);
 
-        let res = [
-          {
-            x: response.data.map((el) => el.date),
-            close: response.data.map((el) => el.close),
-            high: response.data.map((el) => el.high),
-            low: response.data.map((el) => el.low),
-            open: response.data.map((el) => el.open),
-            type: "candlestick",
-            xaxis: "x",
-            yaxis: "y",
-          },
-        ];
+        let res = [];
 
-        //console.log("res", res)
+        response.data.forEach((el) => {
+          res.push([
+            new Date(el.date).getTime(),
+            el.open,
+            el.high,
+            el.low,
+            el.close,
+            0,
+          ]);
+        });
 
         return res;
       } catch (err) {
@@ -240,61 +170,44 @@ export default {
         return [];
       }
     },
-     getApexStockData: async (ticker) => {
-      try {
-        let response = await axios.get(`/api/${ticker}`);
-
-        console.log(response.data);
-
-        let res = [];
-
-        response.data.forEach(element => {
-          res.push( {x: new Date(element.date), y: [ element.open, element.high, element.low, element.close ] })
-        });
-        
-        return [{data:res}];
-      } catch (err) {
-        console.error(err);
-        return [];
-      }
-    },
     EMACalc(mArray, mRange) {
+      
       var k = 2 / (mRange + 1);
-      // first item is just the same as the first item in the input
 
-      let datas_array = [mArray[0].x[0]];
-      let emaArray = [mArray[0].close[0]];
+      // first item is just the same as the first item in the input
+      let emaArray = [[mArray[0][0], mArray[0][4]]];
+
       // for the rest of the items, they are computed with the previous one
-      for (var i = 1; i < mArray[0].close.length; i++) {
-        emaArray.push(mArray[0].close[i] * k + emaArray[i - 1] * (1 - k));
-        datas_array.push(mArray[0].x[i]);
+      for (var i = 1; i < mArray.length; i++) {
+        emaArray.push([mArray[i][0], mArray[i][4] * k + emaArray[i - 1][1] * (1 - k)]);
+        
       }
-      return {
-        x: datas_array,
-        y: emaArray,
-        mode: "lines",
-        name: "EMA_" + mRange,
-        line: { dash: "dashdot", color: "black" },
-        type: "scatter",
-      };
+
+      return emaArray;
     },
     getEmas() {
+
+      this.onchart = [];
+
       for (let x = 0; x < this.selected_emas.length; x++) {
         let v = this.selected_emas[x];
 
-        let dataema = this.EMACalc(this.sdata, v);
+        let dataema = this.EMACalc(this.ohlcv, v);
 
-        dataema.line.color = this.emas.find((el) => el.value == v).color;
-
-        this.sdata.push(dataema);
+        this.onchart.push(
+          {
+            "name": `EMA ${v}`,
+            "type": "EMA",
+            "data": dataema,
+            "settings": {"color": this.emas.find(el => el.value == v).color,  lineWidth: 2}
+          }
+        )
+        
       }
     },
     loadStockData(goal) {
       try {
-        this.sdata = [JSON.parse(JSON.stringify(template_row))];
-
-        //this.sdata[0] = template_row;
-
+        
         let el = this.original[0];
 
         for (let x = 0; x < this.original[0].x.length; x++) {
@@ -323,7 +236,7 @@ export default {
     },
     getCurrentYear() {
       try {
-        this.sdata = [JSON.parse(JSON.stringify(template_row))];
+        //this.sdata = [JSON.parse(JSON.stringify(template_row))];
 
         let el = this.original[0];
 
@@ -361,8 +274,6 @@ export default {
       data.x.push(el.x[x]);
     },
     updateEmas() {
-      console.log("updating", this.selected_emas);
-
       this.sdata = [this.sdata[0]];
       this.getEmas();
     },
@@ -374,4 +285,21 @@ export default {
 .range_buttons button {
   font-size: 12px !important;
 }
+
+.night-mode {
+    position: absolute;
+    top: 15px;
+    right: 80px;
+    color: #888;
+    font: 11px -apple-system,BlinkMacSystemFont,
+        Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,
+        Fira Sans,Droid Sans,Helvetica Neue,
+        sans-serif
+}
+
+.bolder{
+  font-family: 'Arial', Courier, monospace !important;
+  font-weight: bold;
+}
+
 </style>

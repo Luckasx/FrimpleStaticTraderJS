@@ -10,7 +10,7 @@
     </b-input-group>
 
     <div v-for="s of datastocks" :key="s.ticker">
-      <ticker-card :datas="s" :oticker="s.ticker" :olayout="s.layout" :key="s.ticker" :emas="selected_emas"></ticker-card>
+      <ticker-card :datas="s" :oticker="s.ticker" :olayout="s.layout" :key="s.ticker" ></ticker-card>
     </div>
   </b-container>
 </template>
@@ -58,7 +58,7 @@ export default {
     const randomElement =
       this.tickers_list[Math.floor(Math.random() * this.tickers_list.length)];
     this.istocks = randomElement;
-    this.istocks = "AAPL";
+    //this.istocks = "AAPL";
     this.loadCharts();
     this.istocks = "";
   },
