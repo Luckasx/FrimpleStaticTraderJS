@@ -4,23 +4,8 @@
       <b-card :header="oticker" header-tag="header" bg-variant="light">
         <b-card-text>
           <b-row v-if="temDados">
-            <b-col cols="3">
-              <b-input-group class="range_buttons">
-                <b-input-group-prepend>
-                  <b-button variant="dark" @click="getDays(7)">1W</b-button>
-                  <b-button variant="dark" @click="getMonths(1)">1M</b-button>
-                  <b-button variant="dark" @click="getMonths(3)">3M</b-button>
-                  <b-button variant="dark" @click="getMonths(6)">6M</b-button>
-                  <b-button variant="dark" @click="getCurrentYear()"
-                    >YTD</b-button
-                  >
-                  <b-button variant="dark" @click="getMonths(12)">1Y</b-button>
-                  <b-button variant="dark" @click="getMonths(60)">5y</b-button>
-                  <b-button variant="dark" @click="getAll()">All</b-button>
-                </b-input-group-prepend>
-              </b-input-group>
-            </b-col>
-            <b-col class="mt-3" cols="9">
+            
+            <b-col class="" cols="9">
               <b-form inline>
                 <b-form-group
                   id="input-group-1"
@@ -29,14 +14,34 @@
                   class="mr-3"
                 ></b-form-group>
                 <b-form-checkbox-group
-                  id="checkbox-group-1"
+                  id="checkbox-group-ema"
                   v-model="selected_emas"
                   :options="emas"
                   name="flavour-1"
                   @change="updateEmas()"
                 ></b-form-checkbox-group>
+                 <b-form-group
+                  id="input-group-1"
+                  label="Simple Moving Average:"
+                  label-for="input-1"
+                  class="mr-3"
+                ></b-form-group>
+                <b-form-checkbox-group
+                  id="checkbox-group-sma"
+                  v-model="selected_smas"
+                  :options="smas"
+                  name="flavour-sma"
+                  @change="updateSmas()"
+                ></b-form-checkbox-group>
               </b-form>
+            </b-col>            
+          </b-row>
+          <b-row>
+            <template v-for="l in links">
+            <b-col cols=1 :key="l.href" class="text-left">                
+                  <a :href="l.href" target="_blank" ><img :src="l.ico" width="24px" /></a>                
             </b-col>
+            </template>
           </b-row>
           <b-row class="mt-3" v-if="temDados">
             <b-col cols="12">
@@ -55,6 +60,7 @@
                 :color-title="colors.tvTitle"
                 :title-txt="oticker"
                 class="bolder"
+                 :overlays="overlays"
               ></trading-vue>
               <span class="night-mode">
                 <input type="checkbox" v-model="night" />
@@ -75,17 +81,19 @@
 
 <script>
 import TradingVue from "trading-vue-js";
-import { Overlay } from "trading-vue-js";
+// import { Overlay } from "trading-vue-js";
+ import Overlays from 'tvjs-overlays'
 
 const axios = require("axios");
 
 export default {
   props: { oticker: String },
-  mixins: [Overlay],
+  // mixins: [Overlay],
   components: { TradingVue },
   data: function () {
     return {
       selected_emas: [9, 25],
+      selected_smas: [100],
       colorText: "#111111",
       width: window.innerWidth * 0.95,
       height: 550,
@@ -95,25 +103,28 @@ export default {
         type: "Candles",
         indexBased: true,
       },
-      onchart:[
-
-      ],
+      onchart: [],
       ohlcv: [],
       original: [],
       sdata: [],
+      links: [],
       emas: [
         { text: 7, value: 7, color: "orange" },
         { text: 9, value: 9, color: "red" },
         { text: 25, value: 25, color: "purple" },
-        { text: 50, value: 50, color: "brown" },
+        { text: 50, value: 50, color: "white" },
       ],
+      smas: [
+        { text: 100, value: 100, color: "pink" },
+        { text: 250, value: 250, color: "yellow" },        
+      ],
+      overlays: [Overlays['EMA']]
     };
   },
   async mounted() {
-    
     this.ohlcv = await this.getStockData(this.oticker);
-    this.getEmas();
-    
+    this.getLines();
+    this.getLinks();
 
     this.$nextTick(() => {
       let begin = this.$refs.tradingVue.getRange()[0];
@@ -145,8 +156,20 @@ export default {
             wick_dw: "black",
           };
     },
+    
   },
   methods: {
+    getLinks(){
+
+      let pureTicker = this.oticker.toUpperCase().replace(".SA","");
+
+      this.links.push( {'href': 'https://finance.yahoo.com/quote/' + this.oticker, ico: 'https://s.yimg.com/cv/apiv2/default/fp/20180826/icons/favicon_y19_32x32.ico'} )
+
+      this.links.push( {'href': 'https://www.google.com/search?q=' + pureTicker, ico: 'https://www.google.com/favicon.ico'} )
+
+      this.links.push( {'href': 'https://www.tradingview.com/symbols/' + pureTicker, ico: 'https://www.tradingview.com/static/images/favicon.ico'} )
+      
+    },
     getStockData: async (ticker) => {
       try {
         let response = await axios.get(`/api/${ticker}`);
@@ -171,7 +194,6 @@ export default {
       }
     },
     EMACalc(mArray, mRange) {
-      
       var k = 2 / (mRange + 1);
 
       // first item is just the same as the first item in the input
@@ -179,14 +201,15 @@ export default {
 
       // for the rest of the items, they are computed with the previous one
       for (var i = 1; i < mArray.length; i++) {
-        emaArray.push([mArray[i][0], mArray[i][4] * k + emaArray[i - 1][1] * (1 - k)]);
-        
+        emaArray.push([
+          mArray[i][0],
+          mArray[i][4] * k + emaArray[i - 1][1] * (1 - k),
+        ]);
       }
 
       return emaArray;
     },
     getEmas() {
-
       this.onchart = [];
 
       for (let x = 0; x < this.selected_emas.length; x++) {
@@ -194,20 +217,64 @@ export default {
 
         let dataema = this.EMACalc(this.ohlcv, v);
 
-        this.onchart.push(
-          {
-            "name": `EMA ${v}`,
-            "type": "EMA",
-            "data": dataema,
-            "settings": {"color": this.emas.find(el => el.value == v).color,  lineWidth: 2}
-          }
-        )
-        
+        this.onchart.push({
+          name: `EMA ${v}`,
+          type: "EMA",
+          data: dataema,
+          settings: {
+            color: this.emas.find((el) => el.value == v).color,
+            lineWidth: 2,
+          },
+        });
       }
+    },
+    getSmas() {
+      
+
+      for (let x = 0; x < this.selected_smas.length; x++) {
+        let v = this.selected_smas[x];
+
+        let datasma = this.SMACalc(this.ohlcv, v);
+
+        console.log("datasma", datasma)
+
+        this.onchart.push({
+          name: `SMA ${v}`,
+          type: "SMA",
+          data: datasma,
+          settings: {
+            color: this.smas.find((el) => el.value == v).color,
+            lineWidth: 2,
+          },
+        });
+      }
+    },
+    SMACalc(mArray, window = 5) {
+
+      let prices = mArray.map(el => el[4]);
+      let dates = mArray.map(el => el[0]);
+
+      //console.log("marray", mArray, "prices", prices, "dates", dates);
+
+      if (!prices || prices.length < window) {
+        return [];
+      }
+
+      let index = window - 1;
+      const length = prices.length + 1;
+
+      const simpleMovingAverages = [];
+
+      while (++index < length) {
+        const windowSlice = prices.slice(index - window, index);
+        const sum = windowSlice.reduce((prev, curr) => prev + curr, 0);
+        simpleMovingAverages.push([dates[index], sum / window]);
+      }
+
+      return simpleMovingAverages;
     },
     loadStockData(goal) {
       try {
-        
         let el = this.original[0];
 
         for (let x = 0; x < this.original[0].x.length; x++) {
@@ -218,9 +285,7 @@ export default {
           }
         }
 
-        //this.sdata = [this.sdata[0]];
-
-        this.getEmas();
+         this.getEmas();
       } catch (err) {
         console.error("err", err);
       }
@@ -250,10 +315,14 @@ export default {
           }
         }
 
-        this.getEmas();
+        this.getLines();
       } catch (err) {
         console.error("err", err);
       }
+    },
+    getLines(){
+      this.getEmas();
+      this.getSmas();
     },
     getMonths(months) {
       let goal = new Date();
@@ -264,7 +333,7 @@ export default {
     },
     getAll() {
       this.sdata = [this.original[0]];
-      this.getEmas();
+      this.getLines();
     },
     addStockRow(data, el, x) {
       data.close.push(el.close[x]);
@@ -274,8 +343,10 @@ export default {
       data.x.push(el.x[x]);
     },
     updateEmas() {
-      this.sdata = [this.sdata[0]];
-      this.getEmas();
+      this.getLines();
+    },
+    updateSmas() {
+      this.getLines();
     },
   },
 };
@@ -287,19 +358,16 @@ export default {
 }
 
 .night-mode {
-    position: absolute;
-    top: 15px;
-    right: 80px;
-    color: #888;
-    font: 11px -apple-system,BlinkMacSystemFont,
-        Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,
-        Fira Sans,Droid Sans,Helvetica Neue,
-        sans-serif
+  position: absolute;
+  top: 15px;
+  right: 80px;
+  color: #888;
+  font: 11px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
+    Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
 }
 
-.bolder{
-  font-family: 'Arial', Courier, monospace !important;
+.bolder {
+  font-family: "Arial", Courier, monospace !important;
   font-weight: bold;
 }
-
 </style>
