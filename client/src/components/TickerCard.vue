@@ -21,28 +21,34 @@
                   @change="updateEmas()"
                 ></b-form-checkbox-group>
                  <b-form-group
-                  id="input-group-1"
+                  v-bind:id="'input-group-1-' + oticker"
                   label="Simple Moving Average:"
                   label-for="input-1"
                   class="mr-3"
                 ></b-form-group>
                 <b-form-checkbox-group
-                  id="checkbox-group-sma"
+                  v-bind:id="'checkbox-group-sma' + oticker"
                   v-model="selected_smas"
                   :options="smas"
                   name="flavour-sma"
                   @change="updateSmas()"
                 ></b-form-checkbox-group>
               </b-form>
+              </b-col>
+              <b-col class="text-right">
+              <label class="text-primary"><b>Min: {{ minimal }} ({{ minimalDate }})</b></label>
+              <br>
+              <label class="ml-3 text-danger"><b>Max: {{ maximal }} ({{ maximalDate }})</b></label>
+            
             </b-col>            
           </b-row>
-          <b-row>
+          <b-row class="mt-3">
             <template v-for="l in links">
             <b-col cols=1 :key="l.href" class="text-left">                
                   <a :href="l.href" target="_blank" ><img :src="l.ico" width="24px" /></a>                
             </b-col>
             </template>
-          </b-row>
+          </b-row>        
           <b-row class="mt-3" v-if="temDados">
             <b-col cols="12">
               <trading-vue
@@ -102,6 +108,7 @@ export default {
         colorText: "red",
         type: "Candles",
         indexBased: true,
+        data: []
       },
       onchart: [],
       ohlcv: [],
@@ -118,23 +125,58 @@ export default {
         { text: 100, value: 100, color: "pink" },
         { text: 250, value: 250, color: "yellow" },        
       ],
-      overlays: [Overlays['EMA']]
+      overlays: [Overlays['BB']]
     };
   },
   async mounted() {
+    this.oticker = this.oticker.toUpperCase();
     this.ohlcv = await this.getStockData(this.oticker);
     this.getLines();
     this.getLinks();
+
+    console.log(this.ohlcv[0]);
+
+    // this.onchart.push({
+    //         "name": "Bollinger Bands",
+    //         "type": "BB",
+    //         "data": this.ohlcv,
+    //         "settings": {
+    //             "color": "orange",
+    //             "backColor": "#32CD3266",
+    //             "showMid":false,
+    //             lineWidth:1.5,
+    //             length:20
+    //         }
+    //     });
+    
+    this.chart.data = null;
+    this.chart.data = this.ohlcv;
 
     this.$nextTick(() => {
       let begin = this.$refs.tradingVue.getRange()[0];
       let now = new Date().getTime();
       this.$refs.tradingVue.setRange(begin, now);
+      console.log(Overlays['BB']);
     });
     //this.renderChart();
   },
 
   computed: {
+    closes(){
+      return this.ohlcv.map(el => el[4]);
+    },
+    minimal(){
+      return Math.min(...this.closes);
+    },
+    maximal(){
+        return Math.max(...this.closes);
+    },
+    minimalDate(){
+      return new Date(this.getDate(this.minimal)).toLocaleString().substr(0,10);
+    },
+    maximalDate(){
+      return new Date(this.getDate(this.maximal)).toLocaleString().substr(0,10);
+    },
     temDados: function () {
       return true;
     },
@@ -159,6 +201,9 @@ export default {
     
   },
   methods: {
+    getDate(quote){
+        return this.ohlcv.find(el => el[4] == quote)[0];
+    },
     getLinks(){
 
       let pureTicker = this.oticker.toUpperCase().replace(".SA","");
@@ -168,6 +213,11 @@ export default {
       this.links.push( {'href': 'https://www.google.com/search?q=' + pureTicker, ico: 'https://www.google.com/favicon.ico'} )
 
       this.links.push( {'href': 'https://www.tradingview.com/symbols/' + pureTicker, ico: 'https://www.tradingview.com/static/images/favicon.ico'} )
+
+      if(this.oticker.toUpperCase().indexOf(".SA") > -1)
+      {
+        this.links.push( {'href': 'https://www.suno.com.br/acoes/' + pureTicker, ico: 'https://www.suno.com.br/acoes/favicon.ico'} )
+      }
       
     },
     getStockData: async (ticker) => {
@@ -236,8 +286,6 @@ export default {
 
         let datasma = this.SMACalc(this.ohlcv, v);
 
-        console.log("datasma", datasma)
-
         this.onchart.push({
           name: `SMA ${v}`,
           type: "SMA",
@@ -294,8 +342,6 @@ export default {
       let goal = new Date();
 
       goal.setDate(goal.getDate() - days);
-
-      console.log(goal, days);
 
       this.loadStockData(goal);
     },

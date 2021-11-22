@@ -1,29 +1,38 @@
 <template>
   <b-container fluid>
-    <!-- Using components -->
-    <b-input-group class="mt-3">
-      <input placeholder="Search Tickers" v-model="istocks" />
-      <b-input-group-append>
-        <b-button variant="outline-success" @click="loadCharts">Load</b-button>
-      </b-input-group-append>
-       
-    </b-input-group>
+    <b-row>
+      <b-col cols="6">
+        <!-- Using components -->
+        <b-input-group size="md" class="mt-3">
+          <b-form-input placeholder="Search Tickers" v-model="istocks" />
+          <b-input-group-append>
+            <b-button variant="outline-success" @click="loadCharts"
+              >Load</b-button
+            >
+          </b-input-group-append>
+        </b-input-group>
+      </b-col>
+    </b-row>
 
-    <div v-for="s of datastocks" :key="s.ticker">
-      <ticker-card :datas="s" :oticker="s.ticker" :olayout="s.layout" :key="s.ticker" ></ticker-card>
-    </div>
+    <b-row v-for="s of datastocks" :key="s.ticker">
+      <b-col>
+        <ticker-card
+          :datas="s"
+          :oticker="s.ticker"
+          :olayout="s.layout"
+          :key="s.ticker"
+        ></ticker-card>
+      </b-col>
+    </b-row>
   </b-container>
 </template>
 
 <script>
-
-import TickersList from '../assets/tickers.js';
+import TickersList from "../assets/tickers.js";
 
 export default {
   name: "Home",
-  components: {
-    
-  },
+  components: {},
   props: {
     msg: String,
   },
@@ -35,11 +44,9 @@ export default {
       stocks: "",
       astocks: [],
       tickers_list: TickersList,
-     
     };
   },
   methods: {
-   
     async loadCharts() {
       this.datas = [];
 
@@ -49,10 +56,13 @@ export default {
 
       this.istocks = "";
 
-      this.astocks = this.stocks.replace("\n", "").split(";");
-      
+      this.astocks = this.stocks.replace(/\n|\s/g, "").split(";");
+
+      let ind = this.astocks.indexOf("");
+      if (ind > -1) {
+        this.astocks.splice(ind, 1);
+      }
     },
-    
   },
   mounted() {
     const randomElement =
