@@ -63,12 +63,15 @@ export default {
         this.astocks.splice(ind, 1);
       }
     },
+    getRandomElement() {
+      const randomElement =
+        this.tickers_list[Math.floor(Math.random() * this.tickers_list.length)];
+      return randomElement;
+    },
   },
   mounted() {
-    const randomElement =
-      this.tickers_list[Math.floor(Math.random() * this.tickers_list.length)];
-    this.istocks = randomElement;
-    //this.istocks = "AAPL";
+    this.istocks = "ABEV3.SA;EGIE3.SA;FLRY3.SA;TIMS3.SA;TUPY3.SA;WEGE3.SA";
+
     this.loadCharts();
     this.istocks = "";
   },

@@ -134,7 +134,7 @@ export default {
     this.getLines();
     this.getLinks();
 
-    console.log(this.ohlcv[0]);
+    this.calcBollingerBands();
 
     // this.onchart.push({
     //         "name": "Bollinger Bands",
@@ -277,6 +277,47 @@ export default {
           },
         });
       }
+    },
+    calcBollingerBands(){
+        
+        let sma20 = this.SMACalc(this.ohlcv,20);
+
+        let std = this.calcStandardDeviation(this.ohlcv, sma20, 20);
+
+        console.log("std", std);
+
+    },    
+    calcStandardDeviation(dohlcv, dsma, period  ){
+
+      let ret = [[dohlcv[0][0],0]];
+
+      for(let x = 1; x < dohlcv.length; x++){
+             
+             let counter = 0;
+             let squared_diff = 0;
+             let mean = dsma[x][1];
+
+             while(x + counter < period && x - counter  >= 0 ){
+               
+               let close = dohlcv[x-counter][4];
+               
+               squared_diff += Math.pow(close - mean);
+
+
+               counter++;
+
+             }
+
+             let variance = squared_diff / counter;
+
+             let std = Math.sqrt(variance);
+
+             ret.push([dohlcv[x], std]);
+
+      }
+
+      return ret;
+
     },
     getSmas() {
       
