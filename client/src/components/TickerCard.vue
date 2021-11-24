@@ -4,7 +4,6 @@
       <b-card :header="oticker" header-tag="header" bg-variant="light">
         <b-card-text>
           <b-row v-if="temDados">
-            
             <b-col class="" cols="9">
               <b-form inline>
                 <b-form-group
@@ -20,7 +19,7 @@
                   name="flavour-1"
                   @change="updateEmas()"
                 ></b-form-checkbox-group>
-                 <b-form-group
+                <b-form-group
                   v-bind:id="'input-group-1-' + oticker"
                   label="Simple Moving Average:"
                   label-for="input-1"
@@ -33,22 +32,38 @@
                   name="flavour-sma"
                   @change="updateSmas()"
                 ></b-form-checkbox-group>
+
+
+                <label :for="'checkboxbb_' + oticker" class="ml-auto mb-0">Bollinger Bands</label>
+                <b-form-checkbox
+                  v-bind:id="'checkboxbb_' + oticker"
+                  v-model="bollinger_bands"
+                  name="checkbox-1"                  
+                  @change="getLines()"
+                  class="ml-1"
+                  ></b-form-checkbox
+                >
               </b-form>
-              </b-col>
-              <b-col class="text-right">
-              <label class="text-primary"><b>Min: {{ minimal }} ({{ minimalDate }})</b></label>
-              <br>
-              <label class="ml-3 text-danger"><b>Max: {{ maximal }} ({{ maximalDate }})</b></label>
-            
-            </b-col>            
+            </b-col>
+            <b-col class="text-right">
+              <label class="text-primary"
+                ><b>Min: {{ minimal }} ({{ minimalDate }})</b></label
+              >
+              <br />
+              <label class="ml-3 text-danger"
+                ><b>Max: {{ maximal }} ({{ maximalDate }})</b></label
+              >
+            </b-col>
           </b-row>
           <b-row class="mt-3">
             <template v-for="l in links">
-            <b-col cols=1 :key="l.href" class="text-left">                
-                  <a :href="l.href" target="_blank" ><img :src="l.ico" width="24px" /></a>                
-            </b-col>
+              <b-col cols="1" :key="l.href" class="text-left">
+                <a :href="l.href" target="_blank"
+                  ><img :src="l.ico" width="24px"
+                /></a>
+              </b-col>
             </template>
-          </b-row>        
+          </b-row>
           <b-row class="mt-3" v-if="temDados">
             <b-col cols="12">
               <trading-vue
@@ -66,7 +81,7 @@
                 :color-title="colors.tvTitle"
                 :title-txt="oticker"
                 class="bolder"
-                 :overlays="overlays"
+                :overlays="overlays"
               ></trading-vue>
               <span class="night-mode">
                 <input type="checkbox" v-model="night" />
@@ -88,7 +103,7 @@
 <script>
 import TradingVue from "trading-vue-js";
 // import { Overlay } from "trading-vue-js";
- import Overlays from 'tvjs-overlays'
+import Overlays from "tvjs-overlays";
 
 const axios = require("axios");
 
@@ -98,6 +113,7 @@ export default {
   components: { TradingVue },
   data: function () {
     return {
+      bollinger_bands: false,
       selected_emas: [9, 25],
       selected_smas: [100],
       colorText: "#111111",
@@ -108,7 +124,8 @@ export default {
         colorText: "red",
         type: "Candles",
         indexBased: true,
-        data: []
+        data: [],
+        tf: '1d'
       },
       onchart: [],
       ohlcv: [],
@@ -123,9 +140,9 @@ export default {
       ],
       smas: [
         { text: 100, value: 100, color: "pink" },
-        { text: 250, value: 250, color: "yellow" },        
+        { text: 250, value: 250, color: "yellow" },
       ],
-      overlays: [Overlays['BB']]
+      overlays: [Overlays["BB"]],
     };
   },
   async mounted() {
@@ -134,48 +151,45 @@ export default {
     this.getLines();
     this.getLinks();
 
-    this.calcBollingerBands();
-
-    // this.onchart.push({
-    //         "name": "Bollinger Bands",
-    //         "type": "BB",
-    //         "data": this.ohlcv,
-    //         "settings": {
-    //             "color": "orange",
-    //             "backColor": "#32CD3266",
-    //             "showMid":false,
-    //             lineWidth:1.5,
-    //             length:20
-    //         }
-    //     });
-    
     this.chart.data = null;
     this.chart.data = this.ohlcv;
 
     this.$nextTick(() => {
       let begin = this.$refs.tradingVue.getRange()[0];
       let now = new Date().getTime();
-      this.$refs.tradingVue.setRange(begin, now);
-      console.log(Overlays['BB']);
+      this.$refs.tradingVue.setRange(begin, now);      
     });
     //this.renderChart();
   },
 
   computed: {
-    closes(){
-      return this.ohlcv.map(el => el[4]);
+    closes() {
+      if (this.ohlcv.length == 0) {
+        return 0;
+      }
+      return this.ohlcv.map((el) => el[4]);
     },
-    minimal(){
+    minimal() {
+      if (this.ohlcv.length == 0) {
+        return 0;
+      }
       return Math.min(...this.closes);
     },
-    maximal(){
-        return Math.max(...this.closes);
+    maximal() {
+      if (this.ohlcv.length == 0) {
+        return 0;
+      }
+      return Math.max(...this.closes);
     },
-    minimalDate(){
-      return new Date(this.getDate(this.minimal)).toLocaleString().substr(0,10);
+    minimalDate() {
+      return new Date(this.getQuoteDate(this.minimal))
+        .toLocaleString()
+        .substr(0, 10);
     },
-    maximalDate(){
-      return new Date(this.getDate(this.maximal)).toLocaleString().substr(0,10);
+    maximalDate() {
+      return new Date(this.getQuoteDate(this.maximal))
+        .toLocaleString()
+        .substr(0, 10);
     },
     temDados: function () {
       return true;
@@ -198,27 +212,38 @@ export default {
             wick_dw: "black",
           };
     },
-    
   },
   methods: {
-    getDate(quote){
-        return this.ohlcv.find(el => el[4] == quote)[0];
-    },
-    getLinks(){
-
-      let pureTicker = this.oticker.toUpperCase().replace(".SA","");
-
-      this.links.push( {'href': 'https://finance.yahoo.com/quote/' + this.oticker, ico: 'https://s.yimg.com/cv/apiv2/default/fp/20180826/icons/favicon_y19_32x32.ico'} )
-
-      this.links.push( {'href': 'https://www.google.com/search?q=' + pureTicker, ico: 'https://www.google.com/favicon.ico'} )
-
-      this.links.push( {'href': 'https://www.tradingview.com/symbols/' + pureTicker, ico: 'https://www.tradingview.com/static/images/favicon.ico'} )
-
-      if(this.oticker.toUpperCase().indexOf(".SA") > -1)
-      {
-        this.links.push( {'href': 'https://www.suno.com.br/acoes/' + pureTicker, ico: 'https://www.suno.com.br/acoes/favicon.ico'} )
+    getQuoteDate(quote) {
+      if (this.ohlcv.length > 0) {
+        let e = this.ohlcv.find((el) => el[4] == quote);
+        return e[0];
       }
-      
+    },
+    getLinks() {
+      let pureTicker = this.oticker.toUpperCase().replace(".SA", "");
+
+      this.links.push({
+        href: "https://finance.yahoo.com/quote/" + this.oticker,
+        ico: "https://s.yimg.com/cv/apiv2/default/fp/20180826/icons/favicon_y19_32x32.ico",
+      });
+
+      this.links.push({
+        href: "https://www.google.com/search?q=" + pureTicker,
+        ico: "https://www.google.com/favicon.ico",
+      });
+
+      this.links.push({
+        href: "https://www.tradingview.com/symbols/" + pureTicker,
+        ico: "https://www.tradingview.com/static/images/favicon.ico",
+      });
+
+      if (this.oticker.toUpperCase().indexOf(".SA") > -1) {
+        this.links.push({
+          href: "https://www.suno.com.br/acoes/" + pureTicker,
+          ico: "https://www.suno.com.br/acoes/favicon.ico",
+        });
+      }
     },
     getStockData: async (ticker) => {
       try {
@@ -233,7 +258,7 @@ export default {
             el.high,
             el.low,
             el.close,
-            0,
+            el.volume,
           ]);
         });
 
@@ -278,50 +303,59 @@ export default {
         });
       }
     },
-    calcBollingerBands(){
+    calcBollingerBands() {
+      let sma20 = this.SMACalc(this.ohlcv, 20);
+
+      let std = this.calcStandardDeviation(this.ohlcv, sma20, 20);
+
+      sma20.forEach((el) => {
+        let stdd = std.find((es) => es[0] == el[0]);
+
+        if (stdd == undefined) {
+          return;
+        }
+
+        stdd = stdd[1];
         
-        let sma20 = this.SMACalc(this.ohlcv,20);
+        el[2] = el[1];
+        el[3] = el[2] + stdd * 2;
+        el[1] = el[2] - stdd * 2;
+      });
 
-        let std = this.calcStandardDeviation(this.ohlcv, sma20, 20);
+      
+      return sma20;
+    },
+    calcStandardDeviation(dohlcv, dsma, period) {
+      let ret = [];
 
-        console.log("std", std);
+      try {
+        ret.push([dohlcv[period][0], 0]);
+      } catch (err) {
+        console.log(err);
+      }
 
-    },    
-    calcStandardDeviation(dohlcv, dsma, period  ){
+      for (let x = period; x < dohlcv.length; x++) {
+        // console.log(x);
+        let counter = 0;
+        let squared_diff = 0;
+        let mean = dsma.find((el) => el[0] == dohlcv[x][0])[1];
 
-      let ret = [[dohlcv[0][0],0]];
+        while (counter < period && x - counter >= 0) {
+          let close = dohlcv[x - counter][4];
+          squared_diff += Math.pow(close - mean, 2);
+          counter++;
+        }
 
-      for(let x = 1; x < dohlcv.length; x++){
-             
-             let counter = 0;
-             let squared_diff = 0;
-             let mean = dsma[x][1];
+        let variance = squared_diff / counter;
 
-             while(x + counter < period && x - counter  >= 0 ){
-               
-               let close = dohlcv[x-counter][4];
-               
-               squared_diff += Math.pow(close - mean);
+        let std = Math.sqrt(variance);
 
-
-               counter++;
-
-             }
-
-             let variance = squared_diff / counter;
-
-             let std = Math.sqrt(variance);
-
-             ret.push([dohlcv[x], std]);
-
+        ret.push([dohlcv[x][0], std]);
       }
 
       return ret;
-
     },
     getSmas() {
-      
-
       for (let x = 0; x < this.selected_smas.length; x++) {
         let v = this.selected_smas[x];
 
@@ -339,9 +373,8 @@ export default {
       }
     },
     SMACalc(mArray, window = 5) {
-
-      let prices = mArray.map(el => el[4]);
-      let dates = mArray.map(el => el[0]);
+      let prices = mArray.map((el) => el[4]);
+      let dates = mArray.map((el) => el[0]);
 
       //console.log("marray", mArray, "prices", prices, "dates", dates);
 
@@ -374,7 +407,7 @@ export default {
           }
         }
 
-         this.getEmas();
+        this.getEmas();
       } catch (err) {
         console.error("err", err);
       }
@@ -407,9 +440,27 @@ export default {
         console.error("err", err);
       }
     },
-    getLines(){
+    getLines() {
+      
       this.getEmas();
       this.getSmas();
+
+      if (this.bollinger_bands == true)  {
+        let bbdata = this.calcBollingerBands();
+
+        this.onchart.push({
+          name: "Bollinger Bands",
+          type: "BB",
+          data: bbdata,
+          settings: {
+            color: "#a4e0f4",
+            backColor: "#a4e0f433",
+            showMid: false,
+            lineWidth: 1.5,
+            length: 20,
+          },
+        });
+      }
     },
     getMonths(months) {
       let goal = new Date();
@@ -434,7 +485,8 @@ export default {
     },
     updateSmas() {
       this.getLines();
-    },
+    }
+    
   },
 };
 </script>

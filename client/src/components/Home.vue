@@ -71,6 +71,7 @@ export default {
   },
   mounted() {
     this.istocks = "ABEV3.SA;EGIE3.SA;FLRY3.SA;TIMS3.SA;TUPY3.SA;WEGE3.SA";
+    //this.istocks = "ABEV3.SA;";
 
     this.loadCharts();
     this.istocks = "";
