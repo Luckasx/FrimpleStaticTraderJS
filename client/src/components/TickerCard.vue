@@ -33,16 +33,16 @@
                   @change="updateSmas()"
                 ></b-form-checkbox-group>
 
-
-                <label :for="'checkboxbb_' + oticker" class="ml-auto mb-0">Bollinger Bands</label>
+                <label :for="'checkboxbb_' + oticker" class="ml-auto mb-0"
+                  >Bollinger Bands</label
+                >
                 <b-form-checkbox
                   v-bind:id="'checkboxbb_' + oticker"
                   v-model="bollinger_bands"
-                  name="checkbox-1"                  
+                  name="checkbox-1"
                   @change="getLines()"
                   class="ml-1"
-                  ></b-form-checkbox
-                >
+                ></b-form-checkbox>
               </b-form>
             </b-col>
             <b-col class="text-right">
@@ -118,16 +118,17 @@ export default {
       selected_smas: [100],
       colorText: "#111111",
       width: window.innerWidth * 0.95,
-      height: 550,
+      height: 650,
       night: true,
       chart: {
         colorText: "red",
         type: "Candles",
         indexBased: true,
         data: [],
-        tf: '1d'
+        tf: "1d",
       },
       onchart: [],
+      offchart: [],
       ohlcv: [],
       original: [],
       sdata: [],
@@ -151,15 +152,17 @@ export default {
     this.getLines();
     this.getLinks();
 
+    //this.calcRSI();
+
+    
     this.chart.data = null;
     this.chart.data = this.ohlcv;
 
     this.$nextTick(() => {
       let begin = this.$refs.tradingVue.getRange()[0];
       let now = new Date().getTime();
-      this.$refs.tradingVue.setRange(begin, now);      
+      this.$refs.tradingVue.setRange(begin, now);
     });
-    //this.renderChart();
   },
 
   computed: {
@@ -316,13 +319,12 @@ export default {
         }
 
         stdd = stdd[1];
-        
+
         el[2] = el[1];
         el[3] = el[2] + stdd * 2;
         el[1] = el[2] - stdd * 2;
       });
 
-      
       return sma20;
     },
     calcStandardDeviation(dohlcv, dsma, period) {
@@ -335,7 +337,6 @@ export default {
       }
 
       for (let x = period; x < dohlcv.length; x++) {
-        // console.log(x);
         let counter = 0;
         let squared_diff = 0;
         let mean = dsma.find((el) => el[0] == dohlcv[x][0])[1];
@@ -354,6 +355,107 @@ export default {
       }
 
       return ret;
+    },
+    deepCopy(arr) {
+      let copy = [];
+      arr.forEach((elem) => {
+        if (Array.isArray(elem)) {
+          copy.push(this.deepCopy(elem));
+        } else {
+          if (typeof elem === "object") {
+            copy.push(this.deepCopyObject(elem));
+          } else {
+            copy.push(elem);
+          }
+        }
+      });
+      return copy;
+    },
+    // Helper function to deal with Objects
+    deepCopyObject(obj) {
+      let tempObj = {};
+      for (let [key, value] of Object.entries(obj)) {
+        if (Array.isArray(value)) {
+          tempObj[key] = this.deepCopy(value);
+        } else {
+          if (typeof value === "object") {
+            tempObj[key] = this.deepCopyObject(value);
+          } else {
+            tempObj[key] = value;
+          }
+        }
+      }
+      return tempObj;
+    },
+    calcRSI() {
+      let temparray = this.deepCopy(this.ohlcv);
+
+      let rsidata = [];
+
+      for(let x = 0; x < temparray.length; x++){
+
+        if(x > 0){
+          temparray[x][6] = temparray[x][4] - temparray[x -1][4];
+          continue;
+        }
+
+        if(x == 0){
+          temparray[x][6] = 0;
+        }
+      }
+      
+
+      for (let i = 0; i < temparray.length; i++) {
+        let counter = 0;
+        let sumup = 0;
+        let sumdown = 0;
+
+        console.log(`i: ${i} ${new Date(temparray[i][0])}  `);
+        
+        while (counter < 14 && i - counter >= 0) {
+          let el = temparray[i - counter];
+          let diff = el[6];
+
+          //console.log(`i: ${i} ${new Date(el[0])}  ${diff}`);
+          
+          if (diff > 0) {
+            sumup += diff;
+          }
+
+          if (diff <= 0) {
+            sumdown +=  Math.abs(diff);
+          }
+
+          counter++;
+        }
+
+        counter--;
+        
+        let avgup = sumup / (counter);
+        let avgdown = sumdown / (counter);
+        let rs = avgup / avgdown;
+
+        let rsi = 100 - (100 / (1 + rs));
+
+        if (isNaN(rsi)) {
+          rsi = 0;
+        }
+
+        rsidata.push([temparray[i][0], rsi]);
+      }
+
+      this.offchart.push({
+          name: "RSI",
+          type: "RSI",
+          data: rsidata,
+          settings: {
+            color: "#a4e0f4",
+            backColor: "#a4e0f433",
+
+            lineWidth: 1.5,
+            length: 20,
+          },
+        });
     },
     getSmas() {
       for (let x = 0; x < this.selected_smas.length; x++) {
@@ -375,8 +477,6 @@ export default {
     SMACalc(mArray, window = 5) {
       let prices = mArray.map((el) => el[4]);
       let dates = mArray.map((el) => el[0]);
-
-      //console.log("marray", mArray, "prices", prices, "dates", dates);
 
       if (!prices || prices.length < window) {
         return [];
@@ -441,11 +541,10 @@ export default {
       }
     },
     getLines() {
-      
       this.getEmas();
       this.getSmas();
 
-      if (this.bollinger_bands == true)  {
+      if (this.bollinger_bands == true) {
         let bbdata = this.calcBollingerBands();
 
         this.onchart.push({
@@ -485,8 +584,7 @@ export default {
     },
     updateSmas() {
       this.getLines();
-    }
-    
+    },
   },
 };
 </script>

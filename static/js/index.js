@@ -17,9 +17,8 @@ window.onload = () => {
       }
     }
   })
-
-  //plotaCandle("wege3.SA");
-  //console.log("olá");
+  
+  
 }
 
 const plotaCandle = (stock) => {
